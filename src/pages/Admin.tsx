@@ -15,7 +15,7 @@ const NARRATION_LABELS: Record<string, string> = {
   overview: "Výběr modulů (kolo)",
   company: "O společnosti",
   references: "Reference",
-  summary: "Souhrn a cena",
+  summary: "Souhrn",
   contact: "Kontakt / závěr",
 };
 
@@ -80,7 +80,7 @@ export function Admin({
         <div>
           <h2>Knihovna obsahu</h2>
           <p>
-            Jediné místo, kde se spravují texty, ceny, komentáře pro voice-over a pevné bloky.
+            Jediné místo, kde se spravují texty, komentáře pro voice-over a pevné bloky.
             Prezentace i video se z tohoto obsahu skládají automaticky.
           </p>
         </div>
@@ -461,8 +461,8 @@ function FixedAdmin({
               ))}
               <div className="tip">
                 Můžete použít zástupné texty: <b>{"{customer}"}</b>, <b>{"{sector}"}</b>,{" "}
-                <b>{"{salesperson}"}</b>, <b>{"{count}"}</b>, <b>{"{topics}"}</b>,{" "}
-                <b>{"{price}"}</b>, <b>{"{priceSentence}"}</b>, <b>{"{categories}"}</b>,{" "}
+                <b>{"{salesperson}"}</b>, <b>{"{count}"}</b>, <b>{"{modules}"}</b>, <b>{"{topics}"}</b>,{" "}
+                <b>{"{categories}"}</b>,{" "}
                 <b>{"{date}"}</b>.
               </div>
             </div>
@@ -485,32 +485,6 @@ function FixedAdmin({
                     d.settings.nextSteps = e.target.value.split("\n").filter((x) => x.trim());
                   })
                 }
-              />
-            </div>
-            <div className="field">
-              <label>Název cenového bloku</label>
-              <input
-                className="input"
-                value={draft.settings.quotationLabel}
-                onChange={(e) => edit((d) => { d.settings.quotationLabel = e.target.value; })}
-              />
-            </div>
-            <div className="field">
-              <label>Poznámka k cenové nabídce (XLSX)</label>
-              <textarea
-                className="textarea"
-                rows={3}
-                value={draft.settings.quotationNote}
-                onChange={(e) => edit((d) => { d.settings.quotationNote = e.target.value; })}
-              />
-            </div>
-            <div className="field">
-              <label>Poznámka k ruční částce</label>
-              <textarea
-                className="textarea"
-                rows={3}
-                value={draft.settings.priceNote}
-                onChange={(e) => edit((d) => { d.settings.priceNote = e.target.value; })}
               />
             </div>
           </div>

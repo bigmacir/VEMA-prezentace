@@ -11,8 +11,6 @@ export const DEFAULT_CFG = {
   includeReferences: true,
   includeSummary: true,
   includeContact: true,
-  priceMode: "quote", // "quote" = samostatný XLSX, "manual" = konkrétní částka
-  manualPrice: 0,
   excelUrl: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),
@@ -32,11 +30,6 @@ export function modulesLabel(n) {
 
 export function areasLabel(n) {
   return `${n} ${pluralCs(n, "oblast", "oblasti", "oblastí")}`;
-}
-
-export function formatCZK(value, currency = "Kč") {
-  const n = Number(value) || 0;
-  return `${new Intl.NumberFormat("cs-CZ").format(Math.round(n))} ${currency}`;
 }
 
 export function formatDateCs(iso) {
@@ -110,36 +103,18 @@ export function normalizeCfg(cfg = {}) {
   };
 }
 
-export function summaryPrice(content, cfg) {
-  if (cfg.priceMode === "manual") {
-    const amount = Math.max(0, Number(cfg.manualPrice) || 0);
-    return {
-      mode: "manual",
-      amount,
-      label: formatCZK(amount, content.settings.currency),
-      note: content.settings.priceNote,
-    };
-  }
-  return {
-    mode: "quote",
-    amount: null,
-    label: content.settings.quotationLabel || "Cenová nabídka",
-    note: content.settings.quotationNote,
-  };
-}
-
 export function applyTemplate(template, vars) {
   return String(template || "").replace(/\{(\w+)\}/g, (_, key) =>
     vars[key] !== undefined && vars[key] !== null && vars[key] !== ""
       ? String(vars[key])
       : "",
-  );
+  ).replace(/ {2,}/g, " ").trim();
 }
 
 /**
  * @param {object} content
  * @param {object} rawCfg
- * @returns {{slides: object[], topics: object[], salesperson: object, sector: object, cfg: object, price: object}}
+ * @returns {{slides: object[], topics: object[], salesperson: object, sector: object, cfg: object}}
  */
 export function buildDeck(content, rawCfg) {
   const cfg = normalizeCfg(rawCfg);
@@ -147,26 +122,22 @@ export function buildDeck(content, rawCfg) {
   const groups = categoryGroups(content, cfg.topicIds);
   const sector = getSector(content, cfg.sector);
   const salesperson = getSalesperson(content, cfg.salespersonId);
-  const price = summaryPrice(content, cfg);
   const confidentiality = content.brand.confidentialityLabel;
   const customer = cfg.customer.trim() || "vaše organizace";
   const dateLabel = formatDateCs(cfg.date);
   const referenceImage = (content.referenceImages || {})[cfg.sector] || null;
-
-  const priceSentence =
-    price.mode === "manual"
-      ? `Orientační cena je ${price.label} bez DPH.`
-      : "Cena je součástí samostatné cenové nabídky ve formátu XLSX.";
 
   const vars = {
     customer,
     sector: sector.name,
     salesperson: salesperson.name,
     count: String(topics.length),
+    modules: modulesLabel(topics.length),
     topics: joinCs(topics.map((t) => t.title)),
     categories: joinCs(groups.map((g) => g.name)),
-    price: price.mode === "manual" ? price.label : "samostatná cenová nabídka",
-    priceSentence,
+    // Ceny se v prezentaci neuvádějí. Staré šablony s {price}/{priceSentence} dostanou prázdný text.
+    price: "",
+    priceSentence: "",
     date: dateLabel,
   };
 
@@ -264,7 +235,6 @@ export function buildDeck(content, rawCfg) {
       groups,
       count: topics.length,
       countLabel: modulesLabel(topics.length),
-      price,
       excelUrl: cfg.excelUrl.trim(),
       note: cfg.note.trim(),
       confidentiality,
@@ -287,7 +257,12 @@ export function buildDeck(content, rawCfg) {
     });
   }
 
-  return { slides, topics, groups, salesperson, sector, cfg, price };
+  slides.forEach((slide, i) => {
+    slide.page = i + 1;
+    slide.totalPages = slides.length;
+  });
+
+  return { slides, topics, groups, salesperson, sector, cfg };
 }
 
 export function deckWarnings(content, cfg) {
@@ -303,7 +278,5 @@ export function deckWarnings(content, cfg) {
   if (!cfg.includeReferences) warnings.push("Slide s referencemi je vypnutý.");
   if (cfg.includeReferences && !(content.referenceImages || {})[cfg.sector])
     warnings.push("Pro tento segment chybí obrázek referencí.");
-  if (cfg.priceMode === "manual" && !Number(cfg.manualPrice))
-    warnings.push("Je zvolená ruční částka, ale není vyplněná.");
   return warnings;
 }

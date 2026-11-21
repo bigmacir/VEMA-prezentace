@@ -31,7 +31,8 @@ export function Help({ content }: { content: Content }) {
           <ul className="small" style={{ lineHeight: 1.7, paddingLeft: 18, margin: 0 }}>
             <li>Kolo oblastí – kliknutím vyberete celou skupinu modulů.</li>
             <li>Knihovna {modules} modulů včetně ODZ a JMHZ, s texty a komentáři pro voice-over.</li>
-            <li>Souhrnná obrazovka s rozsahem nabídky a odkazem na samostatnou cenovou nabídku.</li>
+            <li>Souhrnná obrazovka s rozsahem nabídky.</li>
+            <li>Přihlášení se dvěma rolemi: obchodník (sestavení a export) a administrátor (úpravy obsahu).</li>
             <li>Pevné bloky Vema: titul, o společnosti, reference, kontakt, další kroky.</li>
             <li>Reference jako originální slidy s logy zákazníků podle segmentu.</li>
             <li>Označení „Neveřejné“ na každém slidu.</li>
@@ -62,18 +63,12 @@ export function Help({ content }: { content: Content }) {
 
       <div className="card card-pad" style={{ marginTop: 18 }}>
         <div className="s-eyebrow" style={{ fontSize: 10 }}>Ceny a nabídka</div>
-        <h3 style={{ margin: "8px 0 10px" }}>Cena není součástí modulů</h3>
-        <div className="grid-2">
-          <p className="small muted" style={{ lineHeight: 1.65, margin: 0 }}>
-            V originální nabídce je cena v samostatném XLSX. Aplikace to respektuje: moduly cenu
-            nemají a souhrnný slide standardně odkazuje na samostatnou cenovou nabídku. Pro
-            speciální případy lze ručně zapnout zobrazení konkrétní částky.
-          </p>
-          <p className="small muted" style={{ lineHeight: 1.65, margin: 0 }}>
-            Celková cena se tak nepočítá jako součet modulů, ale vzniká v cenové kalkulaci podle
-            počtu uživatelů, varianty provozu (lokálně/cloud) a rozsahu implementace.
-          </p>
-        </div>
+        <h3 style={{ margin: "8px 0 10px" }}>Cena není součástí prezentace</h3>
+        <p className="small muted" style={{ lineHeight: 1.65, margin: 0 }}>
+          Moduly cenu nemají a souhrnný slide žádnou cenu neuvádí. Cena vzniká v samostatné
+          cenové kalkulaci podle počtu uživatelů, varianty provozu (lokálně/cloud) a rozsahu
+          implementace a posílá se zákazníkovi zvlášť.
+        </p>
       </div>
 
       <div className="grid-2" style={{ marginTop: 18 }}>
@@ -86,11 +81,13 @@ export function Help({ content }: { content: Content }) {
           <p className="small muted" style={{ lineHeight: 1.6 }}>
             Připravený Dockerfile zvládne provoz na Renderu, Railway, Fly.io nebo firemním serveru.
             Data se ukládají do JSON souboru na perzistentním disku – změny vidí všichni uživatelé
-            stejné aplikace. Pro demo lze zapnout heslo přes proměnnou <code>APP_PASSWORD</code>.
+            stejné aplikace. Přihlášení řídí proměnné <code>USER_PASSWORD</code> (obchodník) a{" "}
+            <code>ADMIN_PASSWORD</code> (administrátor).
           </p>
           <pre style={{ background: "#0b2432", color: "#d8e9f3", padding: 12, borderRadius: 9, fontSize: 11, lineHeight: 1.55, overflow: "auto" }}>{`docker build -t vema-presenter .
 docker run -p 8080:8080 \\
-  -e APP_PASSWORD=demo \\
+  -e USER_PASSWORD=heslo-obchodnika \\
+  -e ADMIN_PASSWORD=heslo-admina \\
   -v vema-data:/data vema-presenter`}</pre>
         </div>
         <div className="card card-pad">
@@ -99,7 +96,6 @@ docker run -p 8080:8080 \\
             <li>Potvrdit, jestli Microsoft Edge TTS vyhovuje firemním AI pravidlům.</li>
             <li>Doplnit konkrétního obchodníka a jeho kontakt.</li>
             <li>Doplnit odkaz na skutečný XLSX a vzor cenové nabídky.</li>
-            <li>Rozhodnout, zda budou obchodníci sdílet jeden obsah (backend + přihlášení).</li>
             <li>Doplnit modul TRO, až budou k dispozici podklady.</li>
             <li>Doladit finální firemní fonty a případné grafické prvky.</li>
           </ul>

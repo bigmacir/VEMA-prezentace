@@ -5,43 +5,47 @@ import crypto from "node:crypto";
 import { ROOT, OUTPUT_DIR, SEED_FILE, getContent, saveContent, ensureOutput } from "./store.js";
 import { buildPptx } from "./pptx.js";
 import { renderVideo } from "./video.js";
-import { VOICES } from "./tts.js";
+import { VOICES, synthesize } from "./tts.js";
+import { authRoutes, requireAdmin, requireLogin, sessionMiddleware } from "./auth.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const jobs = new Map();
 
-// Volitelné jednoduché zabezpečení pro veřejné demo (Basic auth).
-// Na produkci doporučujeme skutečné přihlašování a role.
-const APP_PASSWORD = process.env.APP_PASSWORD || "";
-if (APP_PASSWORD) {
-  app.use((req, res, next) => {
-    if (req.path === "/api/health") return next();
-    const header = req.headers.authorization || "";
-    const [, encoded] = header.split(" ");
-    let user = "";
-    let pass = "";
-    if (encoded) {
-      try {
-        [user, pass] = Buffer.from(encoded, "base64").toString("utf8").split(":");
-      } catch {
-        /* ignore */
-      }
-    }
-    // Uživatelské jméno je libovolné, rozhoduje heslo.
-    if (pass === APP_PASSWORD) return next();
-    res.setHeader("WWW-Authenticate", 'Basic realm="Vema prezentér"');
-    res.status(401).send("Přístup vyžaduje heslo.");
-  });
-}
-
+// Za reverzní proxy (Render, Railway, nginx…) – kvůli req.secure a req.ip.
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "12mb" }));
+app.use(sessionMiddleware);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
 });
 
+authRoutes(app);
+
+// Vše ostatní pod /api vyžaduje přihlášení (obchodník nebo admin).
+app.use("/api", requireLogin);
+
 app.get("/api/voices", (req, res) => res.json({ voices: VOICES }));
+
+// Krátká ukázka hlasu pro porovnání (cache na disku, aby se neplatilo opakovaně).
+const SAMPLE_TEXT =
+  "Dobrý den, děkuji za váš čas. Připravil jsem pro vás nabídku personálního a mzdového systému Vema, " +
+  "který dnes používá přes osm tisíc organizací.";
+app.get("/api/voices/sample", async (req, res, next) => {
+  try {
+    const voice = String(req.query.voice || "");
+    if (!VOICES.some((v) => v.id === voice)) return res.status(404).json({ error: "Neznámý hlas." });
+    const dir = path.join(OUTPUT_DIR, "samples", crypto.createHash("sha1").update(voice).digest("hex"));
+    const file = path.join(dir, "voice.mp3");
+    const exists = await fs.stat(file).then(() => true, () => false);
+    if (!exists) await synthesize(SAMPLE_TEXT, dir, voice);
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    res.sendFile(file);
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.get("/api/content", async (req, res, next) => {
   try {
@@ -51,7 +55,7 @@ app.get("/api/content", async (req, res, next) => {
   }
 });
 
-app.put("/api/content", async (req, res, next) => {
+app.put("/api/content", requireAdmin, async (req, res, next) => {
   try {
     const updated = await saveContent(req.body);
     res.json(updated);
@@ -60,7 +64,7 @@ app.put("/api/content", async (req, res, next) => {
   }
 });
 
-app.patch("/api/topics/:id", async (req, res, next) => {
+app.patch("/api/topics/:id", requireAdmin, async (req, res, next) => {
   try {
     const content = structuredClone(await getContent());
     const topic = content.topics.find((t) => t.id === req.params.id);
@@ -73,7 +77,7 @@ app.patch("/api/topics/:id", async (req, res, next) => {
   }
 });
 
-app.post("/api/content/reset", async (req, res, next) => {
+app.post("/api/content/reset", requireAdmin, async (req, res, next) => {
   try {
     const raw = await fs.readFile(SEED_FILE, "utf8");
     const seed = JSON.parse(raw);

@@ -1,6 +1,12 @@
-import type { BuilderCfg, Content, VideoJob } from "./types";
+import type { BuilderCfg, Content, Role, VideoJob } from "./types";
+
+/** Při vypršení přihlášení (401) dá vědět aplikaci, aby ukázala přihlašovací stránku. */
+function checkAuth(res: Response) {
+  if (res.status === 401) window.dispatchEvent(new Event("vema:unauthorized"));
+}
 
 async function json<T>(res: Response): Promise<T> {
+  checkAuth(res);
   if (!res.ok) {
     let msg = res.statusText;
     try {
@@ -12,6 +18,34 @@ async function json<T>(res: Response): Promise<T> {
     throw new Error(msg);
   }
   return res.json() as Promise<T>;
+}
+
+export async function getSession(): Promise<{ role: Role } | null> {
+  const res = await fetch("/api/auth/me");
+  if (res.status === 401) return null;
+  return json<{ role: Role }>(res);
+}
+
+export async function login(password: string): Promise<{ role: Role }> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    let msg = "Přihlášení se nepovedlo.";
+    try {
+      msg = (await res.json()).error || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export async function logout(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST" });
 }
 
 export async function fetchContent(): Promise<Content> {
@@ -42,6 +76,7 @@ export async function exportPptx(cfg: BuilderCfg): Promise<Blob> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(cfg),
   });
+  checkAuth(res);
   if (!res.ok) {
     let msg = "Export PPTX selhal.";
     try {
@@ -68,6 +103,16 @@ export async function startVideo(cfg: BuilderCfg, voice: string): Promise<{ id: 
     body: JSON.stringify({ ...cfg, voice }),
   });
   return json<{ id: string }>(res);
+}
+
+export type Voice = { id: string; label: string; provider: string };
+
+export async function fetchVoices(): Promise<Voice[]> {
+  return (await json<{ voices: Voice[] }>(await fetch("/api/voices"))).voices;
+}
+
+export function voiceSampleUrl(id: string) {
+  return `/api/voices/sample?voice=${encodeURIComponent(id)}`;
 }
 
 export async function getVideo(id: string): Promise<VideoJob> {

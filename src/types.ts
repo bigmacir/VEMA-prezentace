@@ -61,13 +61,11 @@ export type Content = {
   salespeople: Salesperson[];
   narrations: Record<string, string>;
   settings: {
-    currency: string;
-    quotationLabel: string;
-    quotationNote: string;
-    priceNote: string;
     nextSteps: string[];
   };
 };
+
+export type Role = "user" | "admin";
 
 export type BuilderCfg = {
   customer: string;
@@ -79,8 +77,6 @@ export type BuilderCfg = {
   includeReferences: boolean;
   includeSummary: boolean;
   includeContact: boolean;
-  priceMode: "quote" | "manual";
-  manualPrice: number;
   excelUrl: string;
   note: string;
   date: string;
@@ -119,8 +115,6 @@ export const EMPTY_CFG: BuilderCfg = {
   includeReferences: true,
   includeSummary: true,
   includeContact: true,
-  priceMode: "quote",
-  manualPrice: 0,
   excelUrl: "",
   note: "",
   date: new Date().toISOString().slice(0, 10),

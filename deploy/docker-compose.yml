@@ -1,0 +1,35 @@
+# Provoz na VPS: aplikace + Caddy (automatické HTTPS přes Let's Encrypt).
+# Použití na serveru:
+#   1) zkopírujte projekt, v tomto adresáři vytvořte .env (viz ../.env.example + DOMAIN)
+#   2) docker compose up -d --build
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATA_DIR: /data
+    volumes:
+      - vema-data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - app
+
+volumes:
+  vema-data:
+  caddy-data:

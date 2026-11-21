@@ -370,11 +370,6 @@ a { color: var(--primary); }
 .s-summary .g2 ul { margin: 0.5cqw 0 0 1.3cqw; padding: 0; list-style: none; }
 .s-summary .g2 li { font-size: 0.82cqw; color: #435a6c; line-height: 1.42; position: relative; padding-left: 0.8cqw; }
 .s-summary .g2 li::before { content: ""; position: absolute; left: 0; top: 0.5cqw; width: 0.25cqw; height: 0.25cqw; border-radius: 50%; background: #b9c8d5; }
-.s-summary .pricecard { position: absolute; right: 3.4cqw; top: 18.2cqw; width: 29cqw; background: var(--navy); color: #fff; border-radius: 0.8cqw; padding: 2.1cqw; }
-.s-summary .pricecard .lbl { font-size: 0.72cqw; letter-spacing: 0.12em; color: #8fb6c8; font-weight: 700; }
-.s-summary .pricecard .amt { font-size: 3.0cqw; font-weight: 700; margin: 0.9cqw 0; letter-spacing: -0.02em; }
-.s-summary .pricecard .quote { font-size: 1.55cqw; font-weight: 700; line-height: 1.2; margin: 1.0cqw 0; }
-.s-summary .pricecard .note { font-size: 0.78cqw; color: #a7c4d2; line-height: 1.4; }
 .s-summary .excel { position: absolute; right: 3.4cqw; top: 39.5cqw; width: 29cqw; background: #f1f7ff; border: 0.1cqw solid #d8e7fb; border-radius: 0.6cqw; padding: 1.2cqw 1.5cqw; }
 .s-summary .excel b { display: block; font-size: 0.78cqw; color: var(--primary); }
 .s-summary .excel span { font-size: 0.76cqw; color: var(--muted); word-break: break-all; }
@@ -448,3 +443,27 @@ a { color: var(--primary); }
 .summary-group-head .dot { width: 8px; height: 8px; border-radius: 50%; }
 .summary-group-head b { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--navy); }
 .summary-group-head span:last-child { margin-left: auto; }
+
+/* ---------- přihlášení ---------- */
+.login-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; background: radial-gradient(circle at 20% 10%, #0b4558 0, var(--navy) 55%);
+}
+.login-card {
+  width: 100%; max-width: 400px; background: var(--card); border-radius: 16px;
+  overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+.login-brand { background: var(--navy); padding: 22px 26px; display: flex; align-items: flex-end; gap: 10px; }
+.login-brand img { height: 30px; }
+.login-brand span { color: #8fb6c8; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.login-body { padding: 24px 26px 28px; }
+.login-body h2 { margin: 0 0 8px; font-size: 20px; }
+.login-error {
+  margin-top: 12px; padding: 9px 12px; border-radius: 8px; font-size: 12.5px;
+  background: #fff7f8; border: 1px solid #f2c9ce; color: var(--danger);
+}
+.role-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 999px;
+  background: #eef4fb; color: #34495a; border: 1px solid var(--line);
+}
+.role-badge.is-admin { background: #fff4e5; color: #8a4b00; border-color: #f3d9b1; }

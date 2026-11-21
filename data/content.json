@@ -1,7 +1,7 @@
 {
   "meta": {
-    "version": 1,
-    "updatedAt": "2026-11-17T17:55:31.696Z",
+    "version": 8,
+    "updatedAt": "2026-11-21T19:10:32.376Z",
     "note": "Obsah vychází z prezentace Seyfor Vema v1.4 a z dokumentu Nabídka VZOR. ODZ a JMHZ doplněny podle zadání. Ceny jsou vedeny mimo moduly, v samostatné cenové nabídce."
   },
   "brand": {
@@ -59,7 +59,7 @@
     "bullets": [
       "Česká a slovenská legislativa",
       "2 500 zákazníků v cloudu",
-      "248 mil. Kč roční obrat",
+      "500 mil. Kč roční obrat",
       "22 prodejních a konzultačních partnerů"
     ]
   },
@@ -104,10 +104,7 @@
       "description": "Kompletní mzdová a platová agenda včetně legislativních vazeb, souběžných pracovních vztahů, zpětných přepočtů a výstupů pro banky, pojišťovny i kontrolní orgány.",
       "bullets": [
         "Komplexní výpočet a zpracování mezd/platů",
-        "Více souběžných pracovněprávních vztahů",
-        "Platná legislativa v časové řadě, zpětné přepočty až 12 měsíců",
-        "Hromadné pořizování dat a elektronické výstupy",
-        "Podklady pro ZP, SSZ, ISP, FÚ a komunikace s bankami"
+        "Více souběžných pracovněprávních vztahů"
       ],
       "narration": "Modul Mzdy zajišťuje kompletní výpočet a zpracování mezd i platů. Pokrývá souběžné pracovní vztahy, legislativu v časové řadě a zpětné přepočty až dvanáct měsíců. Výstupy jsou připravené pro banky, pojišťovny i kontrolní orgány.",
       "sectors": [
@@ -283,7 +280,8 @@
         "Přílohy a verifikace mzdovou účetní",
         "Adresa, bankovní účet, zdravotní pojišťovna, děti",
         "Změna příjmení, občanského průkazu, pasu, důchodu, ZTP",
-        "Automatické uložení schválených změn do databáze"
+        "Automatické uložení schválených změn do databáze",
+        "Lorem ipsum "
       ],
       "narration": "Zaměstnanec může přes portál oznámit změnu osobních údajů a přiložit potřebné dokumenty. Mzdová účetní změnu ověří, případně si vyžádá doplnění, a schválená data se automaticky uloží. Pokrývá adresu, účet, pojišťovnu, děti i změnu příjmení nebo průkazu.",
       "sectors": [
@@ -804,6 +802,13 @@
       "phone": "+420 541 000 000",
       "email": "obchod@vema.cz",
       "note": "Ukázkový kontakt – doplnit konkrétního obchodníka."
+    },
+    {
+      "id": "person-mwm86yf6",
+      "name": "Jan Novák",
+      "role": "Obchodní konzultant",
+      "phone": "",
+      "email": ""
     }
   ],
   "narrations": {
@@ -811,14 +816,10 @@
     "overview": "Toto je výběr modulů, které pro vás připravujeme. Nabídka obsahuje {count} modulů z těchto oblastí: {categories}.",
     "company": "Vema se personálním a mzdovým systémům věnuje od roku 1990 a je součástí skupiny Seyfor. Naše řešení dnes používá přes osm tisíc organizací a měsíčně zpracováváme více než sedm set tisíc mezd.",
     "references": "Ve vašem segmentu {sector} máme řadu referencí. Na následujícím slidu najdete výběr organizací, které systém Vema používají.",
-    "summary": "Nabídka obsahuje {count} modulů. {priceSentence} Podrobnou cenovou kalkulaci a harmonogram najdete v samostatných přílohách.",
+    "summary": "Nabídka obsahuje {modules} z oblastí {categories}. Harmonogram a další podrobnosti najdete v samostatných přílohách.",
     "contact": "Děkuji za pozornost. Rád vám nabídku upřesním a připravím ukázku systému. Těším se na další spolupráci."
   },
   "settings": {
-    "currency": "Kč",
-    "quotationLabel": "Cenová nabídka",
-    "quotationNote": "Cena je součástí samostatné cenové nabídky ve formátu XLSX. Závaznou cenu lze stanovit po předimplementační analýze.",
-    "priceNote": "Uvedená cena je orientační, bez DPH. Podrobný rozpis a harmonogram jsou součástí samostatné cenové nabídky.",
     "nextSteps": [
       "Upřesnění rozsahu modulů a počtu uživatelů",
       "Předimplementační analýza a ukázka systému",

@@ -16,8 +16,8 @@ z reálné prezentace **Seyfor Vema v1.4** a z dokumentu **Nabídka VZOR**.
 3. **Knihovna 30 modulů** – texty, odrážky a komentáře pro voice-over.
    Nový modul (např. připravovaný TRO) stačí přidat v administraci, kolo se
    přizpůsobí samo.
-4. **Souhrnná obrazovka** – rozsah nabídky, odkaz na samostatnou cenovou nabídku
-   (XLSX), volitelně ruční částka, poznámka.
+4. **Souhrnná obrazovka** – rozsah nabídky, volitelný odkaz na Excel, poznámka.
+   Souhrnný slide žádnou cenu neuvádí.
 5. **Pevné bloky Vema** – titul, o společnosti, reference, souhrn, kontakt.
 6. **Reference** – originální slidy s logy zákazníků podle segmentu.
 7. **Náhled prezentace** – všech slidů, včetně úpravy komentáře pro voice-over.
@@ -26,7 +26,9 @@ z reálné prezentace **Seyfor Vema v1.4** a z dokumentu **Nabídka VZOR**.
 9. **Export MP4** – český namluvený komentář (Edge TTS), obrázky z reálného PPTX
    (LibreOffice → PDF → PNG) a spojení přes FFmpeg. Délka slidu se řídí délkou
    namluvení.
-10. **Administrace** – moduly, texty, komentáře, pevné bloky, reference,
+10. **Přihlášení a role** – heslo obchodníka (výběr modulů, náhled, export
+    PPTX/MP4) a heslo administrátora (navíc knihovna obsahu a úpravy komentářů).
+11. **Administrace** – moduly, texty, komentáře, pevné bloky, reference,
     obchodníci, záloha/import JSON, návrat k demo datům.
 
 ### Změny oproti původní prezentaci
@@ -34,9 +36,8 @@ z reálné prezentace **Seyfor Vema v1.4** a z dokumentu **Nabídka VZOR**.
 - **Výběrová řízení byla odstraněna.**
 - **Přidán ODZ** – Osobní dotazník zaměstnance.
 - **Přidán JMHZ** – Jednotné měsíční hlášení zaměstnavatelů.
-- **Ceny nejsou součástí modulů.** V originální nabídce je cena v samostatném
-  XLSX; aplikace to respektuje a souhrnný slide standardně odkazuje na XLSX.
-  Ruční částku lze zapnout jen pro speciální případ.
+- **Ceny nejsou součástí prezentace.** Moduly cenu nemají a souhrnný slide
+  žádnou cenu ani cenový blok neuvádí; cenová nabídka se posílá zvlášť.
 - Vzhled je modernizovaný, ale obsah a struktura vycházejí z originálu.
 
 ## Rychlý start
@@ -49,6 +50,25 @@ npm install
 npm run dev
 # http://localhost:5173
 ```
+
+Bez nastavených hesel se ve vývoji použijí výchozí `obchodnik` / `admin`
+(server to vypíše do konzole). V produkci (`NODE_ENV=production`) server bez
+`USER_PASSWORD` a `ADMIN_PASSWORD` nenastartuje.
+
+## Přihlášení
+
+| Proměnná | Význam |
+|---|---|
+| `USER_PASSWORD` | heslo obchodníka – sestavení prezentace, náhled, export PPTX/MP4 |
+| `ADMIN_PASSWORD` | heslo administrátora – navíc knihovna obsahu, úpravy komentářů, reset dat |
+| `SESSION_SECRET` | náhodný řetězec pro podpis cookie (doporučeno; jinak se odvodí z hesel) |
+| `SESSION_HOURS` | jak dlouho platí přihlášení (výchozí 12 h) |
+
+Přihlášení vydá podepsanou HttpOnly cookie. Oprávnění kontroluje server – obchodník
+nemůže měnit obsah ani přes API (vrací 403). Po 10 chybných pokusech z jedné IP se
+přihlašování na 15 minut zablokuje. Změnou hesla se odhlásí všichni (pokud není
+nastaven `SESSION_SECRET`). Vzor je v `.env.example`. Původní `APP_PASSWORD` se
+bere jako heslo obchodníka.
 
 Produkční režim:
 
@@ -75,6 +95,21 @@ $env:FFPROBE_PATH  = "C:\ffmpeg\bin\ffprobe.exe"
 $env:PDFTOPPM_PATH = "C:\poppler\bin\pdftoppm.exe"
 ```
 
+## Hlasy pro voice-over
+
+Výchozí je **Microsoft Edge TTS** (zdarma, bez klíče). Přirozenější hlasy se zapnou
+nastavením klíče – v aplikaci se pak objeví v nabídce „Hlas“ nad tlačítkem pro video,
+včetně přehrávače s krátkou ukázkou (ukázka se vygeneruje jednou a uloží).
+
+| Poskytovatel | Proměnné | Poznámka |
+|---|---|---|
+| ElevenLabs (Multilingual v2) | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICES="Petra:voiceId,Jan:voiceId"` | nejpřirozenější; hlasy vyberte ve Voice Library (filtr Czech) |
+| Google Chirp 3: HD | `GOOGLE_TTS_API_KEY` (volitelně `GOOGLE_TTS_VOICES`) | cs-CZ, zpracování v EU (`eu-texttospeech.googleapis.com`) |
+| Edge TTS | – | Vlasta, Antonín; vždy k dispozici |
+
+Poskytovateli se posílá text komentáře (včetně názvu zákazníka z titulního slidu).
+Podrobné srovnání: [docs/hosting-and-voices.md](docs/hosting-and-voices.md).
+
 ## Hosting
 
 ### Netlify nestačí
@@ -90,25 +125,36 @@ V projektu je `Dockerfile` (Node + LibreOffice + FFmpeg + Poppler) a `render.yam
 ```bash
 docker build -t vema-presenter .
 docker run -p 8080:8080 \
-  -e APP_PASSWORD=moje-heslo \
+  -e USER_PASSWORD=heslo-obchodnika \
+  -e ADMIN_PASSWORD=heslo-admina \
+  -e SESSION_SECRET=$(openssl rand -hex 32) \
   -v vema-data:/data \
   vema-presenter
 ```
 
-- `APP_PASSWORD` zapne Basic auth (jedno sdílené heslo pro demo).
 - `DATA_DIR=/data` je místo, kde leží `content.json`. Na Renderu/Railway je
   potřeba připojit **persistent disk** na `/data`, jinak se změny po restartu
   ztratí.
 - Všechny změny obsahu vidí **všichni uživatelé** stejné instance. Není to
   per-user kopie. Když jeden obchodník upraví text, změní se všem.
-- Bez přihlášení a rolí je aplikace vhodná jen pro demo. Pro produkci je potřeba
-  skutečné přihlašování, role (obchodník/administrátor) a audit exportů.
+- Aplikace musí běžet za HTTPS (přihlašovací cookie). Nejjednodušší je VPS
+  s `deploy/docker-compose.yml` (Caddy zařídí certifikát automaticky).
+
+Podrobný průzkum hostingu a kvalitnějších hlasů: [docs/hosting-and-voices.md](docs/hosting-and-voices.md).
+
+### VPS (doporučeno)
+
+```bash
+cd deploy
+cp ../.env.example .env   # doplňte hesla, SESSION_SECRET a DOMAIN
+docker compose up -d --build
+```
 
 ### Render
 
 1. Nahrajte projekt na GitHub.
 2. Render → **New → Blueprint** → vyberte repozitář s `render.yaml`.
-3. Nastavte `APP_PASSWORD`.
+3. Nastavte `USER_PASSWORD` a `ADMIN_PASSWORD` (`SESSION_SECRET` se vygeneruje).
 4. U služby zapněte persistent disk `/data` (u placeného plánu).
 
 Video rendering je náročnější na CPU/RAM; pro pohodlné demo doporučuji alespoň
@@ -116,7 +162,7 @@ Video rendering je náročnější na CPU/RAM; pro pohodlné demo doporučuji al
 
 ### Railway / Fly.io / firemní server
 
-Stejný Docker image. Připojte volume na `/data`, nastavte `APP_PASSWORD` a
+Stejný Docker image. Připojte volume na `/data`, nastavte `USER_PASSWORD`, `ADMIN_PASSWORD` a
 `DATA_DIR=/data`.
 
 ## Jak to funguje
@@ -168,7 +214,8 @@ nebo komentář, projeví se ve všech výstupech.
 | Výsledné MP4 | ✅ 1920×1080, H.264 + AAC, ukázka ~192 s / 5,7 MB |
 | Uložení obsahu | ✅ JSON, verze, záloha/import |
 | Produkční build | ✅ `npm run build && npm start` |
-| Basic auth + DATA_DIR | ✅ ověřeno |
+| Přihlášení + role (obchodník/admin) | ✅ ověřeno (401/403 na API, UI) |
+| DATA_DIR | ✅ ověřeno |
 
 Ukázkové výstupy v `samples/`:
 
@@ -182,14 +229,15 @@ data/
   content.json        knihovna obsahu (editovatelná v aplikaci)
   content.seed.json   výchozí data pro „Vrátit ukázková data“
 shared/
-  model.js            sestavení decku, ceny, šablony komentářů
+  model.js            sestavení decku, šablony komentářů
   wheel.js            kolo oblastí (náhled = export)
   theme.js            barvy a rozměry
 server/
-  index.js            Express API, auth, statický frontend
+  index.js            Express API, statický frontend
+  auth.js             přihlášení, role, podepsaná cookie
   pptx.js             generátor PPTX
   video.js            pipeline PPTX → PNG → TTS → MP4
-  tts.js              Edge TTS
+  tts.js              TTS: Edge, ElevenLabs, Google Chirp 3 HD
   store.js            ukládání obsahu (DATA_DIR)
 src/
   pages/Builder.tsx   4 kroky: zákazník → moduly → souhrn → export
@@ -206,9 +254,9 @@ render.yaml           konfigurace pro Render
 
 ## Co je zjednodušené
 
-- Data jsou v JSON souboru, ne v databázi. Pro více obchodníků bude potřeba
-  server/DB a přihlašování.
-- Chybí role a oprávnění (kdo smí měnit obsah, kdo exportovat).
+- Data jsou v JSON souboru, ne v databázi.
+- Přihlášení používá dvě sdílená hesla (obchodník/admin), ne osobní účty –
+  nevíme tedy, kdo konkrétně co změnil nebo exportoval.
 - Vzhled používá oficiální logo a barvy, ale finální fonty a detaily šablony
   je potřeba doladit s Vema.
 - Video nemá animace, přechody ani hudbu. Je to čistá namluvená prezentace.
@@ -221,7 +269,6 @@ render.yaml           konfigurace pro Render
 
 1. Ověřit u Vema firemní pravidla pro TTS (Microsoft Edge / Azure).
 2. Doplnit konkrétního obchodníka a skutečný XLSX.
-3. Rozhodnout, zda obchodníci sdílejí jeden obsah, a doplnit přihlášení/role.
 4. Doplnit modul TRO, až budou podklady.
 5. Doladit finální fonty a grafické prvky.
 6. Nasadit demo (Render/Railway/firemní server) a otestovat na Windows.

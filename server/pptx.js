@@ -375,25 +375,7 @@ function summarySlide(s, slide) {
   summaryColumns(s, slide);
 
   const cardX = 8.85;
-  s.addShape("roundRect", {
-    x: cardX, y: 2.1, w: 3.77, h: 2.18,
-    fill: { color: C.navy }, line: { color: C.navy, width: 0 }, rectRadius: 0.08,
-  });
-  s.addText(slide.price.mode === "quote" ? "CENOVÁ NABÍDKA" : "ORIENTAČNÍ CENA BEZ DPH", {
-    x: cardX + 0.3, y: 2.36, w: 3.2, h: 0.3,
-    fontFace: FONT, fontSize: 7.5, bold: true, color: "8FB6C8", charSpacing: 1.2, margin: 0,
-  });
-  s.addText(slide.price.mode === "quote" ? "Samostatná příloha XLSX" : slide.price.label, {
-    x: cardX + 0.3, y: 2.72, w: 3.2, h: 0.85,
-    fontFace: FONT, fontSize: slide.price.mode === "quote" ? 17 : 23, bold: true, color: C.white,
-    lineSpacingMultiple: 1.05, margin: 0,
-  });
-  s.addText(slide.price.note, {
-    x: cardX + 0.3, y: 3.58, w: 3.15, h: 0.6,
-    fontFace: FONT, fontSize: 7.2, color: "9EBFCF", lineSpacingMultiple: 1.15, margin: 0,
-  });
-
-  let y = 4.55;
+  let y = 2.1;
   if (slide.excelUrl) {
     s.addShape("roundRect", {
       x: cardX, y, w: 3.77, h: 0.75,
@@ -415,7 +397,7 @@ function summarySlide(s, slide) {
       fontFace: FONT, fontSize: 8, color: C.muted, lineSpacingMultiple: 1.15, valign: "top", margin: 0,
     });
   }
-  s.addText(`Nabídka obsahuje ${slide.countLabel || modulesLabel(slide.count)}. Ceny jsou uvedeny bez DPH.`, {
+  s.addText(`Nabídka obsahuje ${slide.countLabel || modulesLabel(slide.count)}.`, {
     x: M, y: 6.2, w: 7.6, h: 0.3,
     fontFace: FONT, fontSize: 7.5, color: "94A3B0", margin: 0,
   });

@@ -5,20 +5,28 @@ import {
   getSector,
   modulesLabel,
   selectedTopics,
-  summaryPrice,
 } from "../../shared/model.js";
-import { downloadBlob, exportPptx, getVideo, startVideo, patchTopic } from "../api";
+import {
+  downloadBlob,
+  exportPptx,
+  fetchVoices,
+  getVideo,
+  patchTopic,
+  startVideo,
+  voiceSampleUrl,
+  type Voice,
+} from "../api";
 import { SlideView } from "../components/SlideView";
 import { Wheel } from "../components/Wheel";
 import type { BuilderCfg, Content, VideoJob } from "../types";
 
 const STEPS = ["Zákazník", "Moduly", "Souhrn", "Náhled a export"];
 
-const VOICES = [
-  { id: "cs-CZ-VlastaNeural", label: "Vlasta – ženský hlas (Azure/Edge)" },
-  { id: "cs-CZ-AntoninNeural", label: "Antonín – mužský hlas (Azure/Edge)" },
-  { id: "none", label: "Bez komentáře (tiché video)" },
+const FALLBACK_VOICES: Voice[] = [
+  { id: "cs-CZ-VlastaNeural", label: "Vlasta – žena (Edge, zdarma)", provider: "edge" },
+  { id: "cs-CZ-AntoninNeural", label: "Antonín – muž (Edge, zdarma)", provider: "edge" },
 ];
+const SILENT: Voice = { id: "none", label: "Bez komentáře (tiché video)", provider: "none" };
 
 function slug(text: string) {
   return (
@@ -37,15 +45,29 @@ export function Builder({
   cfg,
   setCfg,
   notify,
+  isAdmin,
 }: {
   content: Content;
   setContent: (c: Content) => void;
   cfg: BuilderCfg;
   setCfg: (c: BuilderCfg) => void;
   notify: (msg: string, err?: boolean) => void;
+  isAdmin: boolean;
 }) {
   const [step, setStep] = useState(0);
-  const [voice, setVoice] = useState(VOICES[0].id);
+  const [voices, setVoices] = useState<Voice[]>([...FALLBACK_VOICES, SILENT]);
+  const [voice, setVoice] = useState(FALLBACK_VOICES[0].id);
+
+  // Seznam hlasů dává server – ElevenLabs/Google se objeví, jen když mají nastavený klíč.
+  useEffect(() => {
+    fetchVoices()
+      .then((list) => {
+        if (!list.length) return;
+        setVoices([...list, SILENT]);
+        setVoice((cur) => (list.some((v) => v.id === cur) ? cur : list[0].id));
+      })
+      .catch(() => {});
+  }, []);
   const [pptxBusy, setPptxBusy] = useState(false);
   const [job, setJob] = useState<VideoJob | null>(null);
   const [videoBusy, setVideoBusy] = useState(false);
@@ -54,7 +76,6 @@ export function Builder({
     window.scrollTo(0, 0);
   }, [step]);
 
-  const price = summaryPrice(content, cfg);
   const chosen = selectedTopics(content, cfg.topicIds);
   const deck = useMemo(() => buildDeck(content, cfg), [content, cfg]);
   const warnings = deckWarnings(content, cfg);
@@ -168,7 +189,6 @@ export function Builder({
           content={content}
           cfg={cfg}
           patch={patch}
-          price={price}
           warnings={warnings}
           onNext={() => setStep(3)}
           onBack={() => setStep(1)}
@@ -178,11 +198,13 @@ export function Builder({
         <PreviewStep
           content={content}
           setContent={setContent}
+          isAdmin={isAdmin}
           cfg={cfg}
           deck={deck}
           notify={notify}
           voice={voice}
           setVoice={setVoice}
+          voices={voices}
           handlePptx={handlePptx}
           pptxBusy={pptxBusy}
           handleVideo={handleVideo}
@@ -313,11 +335,11 @@ function ClientStep({
           <ol className="small muted" style={{ paddingLeft: 18, lineHeight: 1.65, margin: 0 }}>
             <li>Vyplníte zákazníka a segment.</li>
             <li>Naklikáte moduly na kole.</li>
-            <li>Systém sestaví souhrn, cenu a pevné bloky.</li>
+            <li>Systém sestaví souhrn a pevné bloky.</li>
             <li>Vyexportujete PPTX nebo namluvené MP4.</li>
           </ol>
           <div className="tip" style={{ marginTop: 14 }}>
-            <b>Princip:</b> obsah se neopisuje do slidů ručně. Texty, komentáře a ceny jsou v
+            <b>Princip:</b> obsah se neopisuje do slidů ručně. Texty a komentáře jsou v
             knihovně a prezentace se z nich skládá.
           </div>
         </div>
@@ -534,7 +556,7 @@ function TopicsStep({
           </div>
           <p className="tiny muted" style={{ lineHeight: 1.5, marginBottom: 0 }}>
             Kolo vybírá celou oblast, jednotlivé moduly zapnete v seznamu. Nový modul stačí
-            přidat v knihovně obsahu – kolo se přizpůsobí samo. Ceny jsou v samostatné nabídce.
+            přidat v knihovně obsahu – kolo se přizpůsobí samo.
           </p>
         </div>
       </div>
@@ -550,7 +572,6 @@ function SummaryStep({
   content,
   cfg,
   patch,
-  price,
   warnings,
   onNext,
   onBack,
@@ -558,7 +579,6 @@ function SummaryStep({
   content: Content;
   cfg: BuilderCfg;
   patch: (p: Partial<BuilderCfg>) => void;
-  price: any;
   warnings: string[];
   onNext: () => void;
   onBack: () => void;
@@ -630,8 +650,7 @@ function SummaryStep({
 
         <div className="card">
           <div className="card-head">
-            <h3>Pevné bloky a cenová nabídka</h3>
-            <span className="hint">Cena patří do samostatného XLSX</span>
+            <h3>Pevné bloky</h3>
           </div>
           <div className="card-pad stack" style={{ gap: 12 }}>
             <div className="toggle-row">
@@ -659,7 +678,7 @@ function SummaryStep({
             <div className="toggle-row">
               <div>
                 <div className="txt">Souhrnný slide</div>
-                <div className="sub">Seznam modulů a odkaz na cenovou nabídku</div>
+                <div className="sub">Přehled vybraných modulů podle oblastí</div>
               </div>
               <div className="spacer" />
               <button
@@ -679,42 +698,6 @@ function SummaryStep({
               />
             </div>
 
-            <div className="field" style={{ marginTop: 6 }}>
-              <label>Jak zobrazit cenu</label>
-              <div className="chips">
-                <button
-                  className={`chip ${cfg.priceMode === "quote" ? "is-active" : ""}`}
-                  onClick={() => patch({ priceMode: "quote" })}
-                >
-                  Samostatná cenová nabídka (XLSX)
-                </button>
-                <button
-                  className={`chip ${cfg.priceMode === "manual" ? "is-active" : ""}`}
-                  onClick={() => patch({ priceMode: "manual" })}
-                >
-                  Zobrazit konkrétní částku
-                </button>
-              </div>
-              <span className="hint">
-                Doporučené je nechat cenu mimo prezentaci a odkázat na XLSX – stejně jako v
-                originální nabídce.
-              </span>
-            </div>
-            {cfg.priceMode === "manual" ? (
-              <div className="field">
-                <label>Částka bez DPH (Kč)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={cfg.manualPrice}
-                  onChange={(e) => patch({ manualPrice: Number(e.target.value) })}
-                />
-                <span className="hint">Použijte jen tehdy, když chcete částku ukázat přímo na slidu.</span>
-              </div>
-            ) : null}
-
             <div className="field">
               <label>Odkaz na Excel s kalkulací</label>
               <input
@@ -729,16 +712,6 @@ function SummaryStep({
       </div>
 
       <div className="side-col">
-        <div className="total-card">
-          <div className="lbl">
-            {price.mode === "quote" ? "CENOVÁ NABÍDKA" : "ORIENTAČNÍ CENA BEZ DPH"}
-          </div>
-          <div className={price.mode === "quote" ? "quote-big" : "amount"}>
-            {price.mode === "quote" ? "Samostatná příloha XLSX" : price.label}
-          </div>
-          <div className="note">{price.note}</div>
-        </div>
-
         {warnings.length > 0 ? (
           <div className="warn-box">
             <b className="small">Ještě doladit</b>
@@ -790,11 +763,13 @@ const TYPE_LABEL: Record<string, string> = {
 function PreviewStep({
   content,
   setContent,
+  isAdmin,
   cfg,
   deck,
   notify,
   voice,
   setVoice,
+  voices,
   handlePptx,
   pptxBusy,
   handleVideo,
@@ -805,11 +780,13 @@ function PreviewStep({
 }: {
   content: Content;
   setContent: (c: Content) => void;
+  isAdmin: boolean;
   cfg: BuilderCfg;
   deck: any;
   notify: (msg: string, err?: boolean) => void;
   voice: string;
   setVoice: (v: string) => void;
+  voices: Voice[];
   handlePptx: () => void;
   pptxBusy: boolean;
   handleVideo: () => void;
@@ -894,10 +871,15 @@ function PreviewStep({
             <div className="card" style={{ marginTop: 18 }}>
               <div className="card-head">
                 <h3>Komentář pro voice-over</h3>
-                <span className="hint">Uloží se do knihovny obsahu a použije se i v PPTX poznámkách</span>
+                <span className="hint">
+                  {isAdmin
+                    ? "Uloží se do knihovny obsahu a použije se i v PPTX poznámkách"
+                    : "Upravit komentář může jen administrátor"}
+                </span>
               </div>
               <div className="card-pad">
                 <textarea
+                  readOnly={!isAdmin}
                   className="textarea"
                   rows={3}
                   value={narr}
@@ -906,9 +888,11 @@ function PreviewStep({
                 <div className="row" style={{ marginTop: 10 }}>
                   <span className="tiny muted">{narr.trim().split(/\s+/).filter(Boolean).length} slov</span>
                   <div className="spacer" />
-                  <button className="btn btn-sm btn-primary" disabled={saving} onClick={saveNarr}>
-                    {saving ? "Ukládám…" : "Uložit komentář"}
-                  </button>
+                  {isAdmin && (
+                    <button className="btn btn-sm btn-primary" disabled={saving} onClick={saveNarr}>
+                      {saving ? "Ukládám…" : "Uložit komentář"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -940,12 +924,22 @@ function PreviewStep({
               <div className="field" style={{ marginTop: 10 }}>
                 <label>Hlas</label>
                 <select className="select" value={voice} onChange={(e) => setVoice(e.target.value)}>
-                  {VOICES.map((v) => (
+                  {voices.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.label}
                     </option>
                   ))}
                 </select>
+                {voice !== "none" && (
+                  <audio
+                    key={voice}
+                    controls
+                    preload="none"
+                    src={voiceSampleUrl(voice)}
+                    style={{ width: "100%", height: 34, marginTop: 6 }}
+                  />
+                )}
+                <span className="hint">Přehrajte ukázku a porovnejte hlasy před vytvořením videa.</span>
               </div>
 
               <button

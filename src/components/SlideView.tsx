@@ -248,15 +248,6 @@ export function SlideView({
             </div>
           ))}
         </div>
-        <div className={`pricecard ${s.price.mode === "quote" ? "is-quote" : ""}`}>
-          <div className="lbl">
-            {s.price.mode === "quote" ? "CENOVÁ NABÍDKA" : "ORIENTAČNÍ CENA BEZ DPH"}
-          </div>
-          <div className={s.price.mode === "quote" ? "quote" : "amt"}>
-            {s.price.mode === "quote" ? "Samostatná příloha XLSX" : s.price.label}
-          </div>
-          <div className="note">{s.price.note}</div>
-        </div>
         {s.excelUrl ? (
           <div className="excel">
             <b>Podrobná kalkulace (Excel)</b>
@@ -264,9 +255,7 @@ export function SlideView({
           </div>
         ) : null}
         {s.note ? <div className="note2">{s.note}</div> : null}
-        <div className="pricenote">
-          Nabídka obsahuje {modulesLabel(s.count)}. Ceny jsou uvedeny bez DPH.
-        </div>
+        <div className="pricenote">Nabídka obsahuje {modulesLabel(s.count)}.</div>
         <Footer slide={slide} />
       </div>
     );

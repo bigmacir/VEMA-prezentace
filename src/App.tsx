@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchContent } from "./api";
-import { EMPTY_CFG, type BuilderCfg, type Content } from "./types";
+import { fetchContent, getSession, logout } from "./api";
+import { EMPTY_CFG, type BuilderCfg, type Content, type Role } from "./types";
 import { Builder } from "./pages/Builder";
 import { Admin } from "./pages/Admin";
 import { Help } from "./pages/Help";
+import { Login } from "./pages/Login";
 
 type Route = "builder" | "admin" | "help";
 
 const LS_KEY = "vema-poc-cfg-v1";
 
 export default function App() {
+  // undefined = ještě ověřuji, null = nepřihlášen
+  const [role, setRole] = useState<Role | null | undefined>(undefined);
   const [content, setContent] = useState<Content | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>("builder");
@@ -44,10 +47,42 @@ export default function App() {
   }, [route]);
 
   useEffect(() => {
+    getSession()
+      .then((s) => setRole(s?.role ?? null))
+      .catch(() => setRole(null));
+    const onUnauthorized = () => setRole(null);
+    window.addEventListener("vema:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("vema:unauthorized", onUnauthorized);
+  }, []);
+
+  useEffect(() => {
+    if (!role) return;
+    setError(null);
     fetchContent()
       .then(setContent)
       .catch((e) => setError(e.message || "Nepodařilo se načíst obsah."));
-  }, []);
+  }, [role]);
+
+  // Obchodník do administrace nesmí – kdyby tam zůstal po odhlášení admina.
+  useEffect(() => {
+    if (role === "user" && route === "admin") setRoute("builder");
+  }, [role, route]);
+
+  async function handleLogout() {
+    await logout().catch(() => {});
+    setRole(null);
+    setContent(null);
+    setRoute("builder");
+  }
+
+  if (role === undefined) {
+    return <div className="empty" style={{ padding: 48 }}>Načítám…</div>;
+  }
+  if (role === null) {
+    return <Login onLogin={setRole} />;
+  }
+
+  const isAdmin = role === "admin";
 
   return (
     <div className="app">
@@ -68,6 +103,7 @@ export default function App() {
             </span>
             <span className="txt">Nová prezentace</span>
           </button>
+          {isAdmin && (
           <button className={route === "admin" ? "is-active" : ""} onClick={() => setRoute("admin")}>
             <span className="ico">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -77,6 +113,7 @@ export default function App() {
             </span>
             <span className="txt">Knihovna obsahu</span>
           </button>
+          )}
           <button className={route === "help" ? "is-active" : ""} onClick={() => setRoute("help")}>
             <span className="ico">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -102,9 +139,12 @@ export default function App() {
           </div>
           <div className="topbar-actions">
             {content && <span className="demo-badge">Interní ukázka · verze {content.meta.version}</span>}
-            <a className="btn btn-sm" href="https://www.vema.cz" target="_blank" rel="noreferrer">
-              vema.cz ↗
-            </a>
+            <span className={`role-badge ${isAdmin ? "is-admin" : ""}`}>
+              {isAdmin ? "Administrátor" : "Obchodník"}
+            </span>
+            <button className="btn btn-sm" onClick={handleLogout}>
+              Odhlásit
+            </button>
           </div>
         </div>
 
@@ -133,9 +173,10 @@ export default function App() {
             cfg={cfg}
             setCfg={setCfg}
             notify={notify}
+            isAdmin={isAdmin}
           />
         )}
-        {content && route === "admin" && (
+        {content && isAdmin && route === "admin" && (
           <Admin content={content} setContent={setContent} notify={notify} />
         )}
         {content && route === "help" && <Help content={content} />}

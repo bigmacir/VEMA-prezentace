@@ -811,14 +811,10 @@
     "overview": "Toto je výběr modulů, které pro vás připravujeme. Nabídka obsahuje {count} modulů z těchto oblastí: {categories}.",
     "company": "Vema se personálním a mzdovým systémům věnuje od roku 1990 a je součástí skupiny Seyfor. Naše řešení dnes používá přes osm tisíc organizací a měsíčně zpracováváme více než sedm set tisíc mezd.",
     "references": "Ve vašem segmentu {sector} máme řadu referencí. Na následujícím slidu najdete výběr organizací, které systém Vema používají.",
-    "summary": "Nabídka obsahuje {count} modulů. {priceSentence} Podrobnou cenovou kalkulaci a harmonogram najdete v samostatných přílohách.",
+    "summary": "Nabídka obsahuje {modules} z oblastí {categories}. Harmonogram a další podrobnosti najdete v samostatných přílohách.",
     "contact": "Děkuji za pozornost. Rád vám nabídku upřesním a připravím ukázku systému. Těším se na další spolupráci."
   },
   "settings": {
-    "currency": "Kč",
-    "quotationLabel": "Cenová nabídka",
-    "quotationNote": "Cena je součástí samostatné cenové nabídky ve formátu XLSX. Závaznou cenu lze stanovit po předimplementační analýze.",
-    "priceNote": "Uvedená cena je orientační, bez DPH. Podrobný rozpis a harmonogram jsou součástí samostatné cenové nabídky.",
     "nextSteps": [
       "Upřesnění rozsahu modulů a počtu uživatelů",
       "Předimplementační analýza a ukázka systému",
